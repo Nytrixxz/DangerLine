@@ -7,10 +7,15 @@ if (tg) {
     console.log('Работаем вне Telegram');
 }
 
-let userData;
-let telegramId = tg?.initDataUnsafe?.user?.id || 'local_' + Math.random().toString(36).substr(2, 9);
+let userData = null;
+let telegramId = tg?.initDataUnsafe?.user?.id;
 let username = tg?.initDataUnsafe?.user?.username || "Игрок";
 let ref = new URLSearchParams(window.location.search).get("start");
+
+// Если нет telegramId (локально), генерируем
+if (!telegramId) {
+    telegramId = 'local_' + Math.random().toString(36).substr(2, 9);
+}
 
 // DOM элементы
 const loader = document.getElementById('loader');
@@ -20,26 +25,17 @@ const usernameSpan = document.getElementById('username');
 const profileNameSpan = document.getElementById('profile-name');
 const profileIdSpan = document.getElementById('profile-id');
 const profileBalanceSpan = document.getElementById('profile-balance');
-const vipBadgeProfile = document.getElementById('vip-badge-profile');
 const dailyBonusBtn = document.getElementById('daily-bonus-btn');
 const refLinkInput = document.getElementById('ref-link');
 const refCountSpan = document.getElementById('ref-count');
 const refEarnedSpan = document.getElementById('ref-earned');
 const refListUl = document.getElementById('ref-list');
 const copyRefBtn = document.getElementById('copy-ref');
-
-// Лидеры
 const leadersContainer = document.getElementById('leaders-container');
-
-// Кейсы
 const caseButtons = document.querySelectorAll('.open-case-btn');
-
-// Рулетка
 const rouletteSpin = document.getElementById('roulette-spin');
 const rouletteBet = document.getElementById('roulette-bet');
 const rouletteResult = document.getElementById('roulette-result');
-
-// Блэкджек
 const blackjackPlay = document.getElementById('blackjack-play');
 const blackjackHit = document.getElementById('blackjack-hit');
 const blackjackStand = document.getElementById('blackjack-stand');
@@ -48,28 +44,23 @@ const dealerCardsDiv = document.getElementById('dealer-cards');
 const playerCardsDiv = document.getElementById('player-cards');
 const dealerSumSpan = document.getElementById('dealer-sum');
 const playerSumSpan = document.getElementById('player-sum');
-
-// Кликер
 const clickerCoin = document.getElementById('clicker-coin');
 const clickerEarned = document.getElementById('clicker-earned');
 const clickRewardSpan = document.getElementById('click-reward');
 const clicksLeftSpan = document.getElementById('clicks-left');
 const clicksMaxSpan = document.getElementById('clicks-max');
 const clickProgress = document.getElementById('click-progress');
-
-// Магазин
 const buyVipBtn = document.getElementById('buy-vip-btn');
-
-// Экраны и навигация
 const screens = document.querySelectorAll('.screen');
 const navBtns = document.querySelectorAll('.nav-btn');
 
-// --- Состояние ---
+// --- Состояние приложения ---
+let vip = false;
+let lastBonusTime = 0;
 let selectedColor = 'red';
 let playerHand = [], dealerHand = [], gameActive = false;
 let clickCountHour = 0, lastClickResetTime = Date.now();
-let vip = false; // будет загружаться с сервера
-let lastBonusTime = 0; // timestamp последнего бонуса
+let referrals = []; // список рефералов
 
 // --- Вспомогательные функции ---
 function showMessage(msg) {
@@ -81,41 +72,29 @@ function formatCoins(coins) {
 }
 
 function updateUI() {
+    if (!userData) return;
     balanceSpan.innerText = formatCoins(userData.coins);
     usernameSpan.innerText = username;
     profileNameSpan.innerHTML = username + (vip ? '<span class="vip-badge">VIP</span>' : '');
-    profileIdSpan.innerText = `ID: ${telegramId || 'unknown'}`;
+    profileIdSpan.innerText = `ID: ${telegramId}`;
     profileBalanceSpan.innerText = formatCoins(userData.coins);
     
-    // Видимость VIP-бейджа в профиле
+    // Кнопка бонуса только для VIP
     if (vip) {
-        vipBadgeProfile.classList.remove('hidden');
+        dailyBonusBtn.classList.remove('hidden');
     } else {
-        vipBadgeProfile.classList.add('hidden');
+        dailyBonusBtn.classList.add('hidden');
     }
     
-    // Обновляем реферальную ссылку
-    const refLink = `https://t.me/dangerline_bot?start=${telegramId || ''}`;
+    // Реферальная ссылка
+    const refLink = `https://t.me/dangerline_bot?start=${telegramId}`;
     refLinkInput.value = refLink;
-    refCountSpan.innerText = userData.referrals || 0;
-    refEarnedSpan.innerText = (userData.referrals || 0) * 500;
-    
-    // Демо-список рефералов
-    if (userData.referrals > 0) {
-        let html = '';
-        for (let i = 0; i < userData.referrals; i++) {
-            html += `<li class="ref-item">user${i+1} <span class="ref-bonus">+500</span></li>`;
-        }
-        refListUl.innerHTML = html;
-    } else {
-        refListUl.innerHTML = '<li class="ref-item">Пока никого</li>';
-    }
     
     // Обновляем кликер
     updateClickerUI();
 }
 
-// --- Загрузка данных с сервера (имитация) ---
+// --- Загрузка данных с сервера ---
 async function login() {
     try {
         const res = await fetch("/api/login", {
@@ -123,36 +102,65 @@ async function login() {
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ telegramId, username, ref })
         });
-        if (!res.ok) throw new Error('Network error');
+        if (!res.ok) throw new Error('Ошибка сети');
         userData = await res.json();
-        // Предполагаем, что сервер возвращает { coins, referrals, vip, lastBonusTime? }
+        // Предполагаем, что сервер возвращает { coins, referrals, vip, lastBonusTime }
         vip = userData.vip || false;
         lastBonusTime = userData.lastBonusTime || 0;
+        referrals = userData.referralsList || []; // список имён приглашённых
     } catch (error) {
-        console.error('Login failed, using local data');
-        userData = { coins: 20000, referrals: 2 }; // для теста
+        console.error('Login failed, using local data', error);
+        userData = { coins: 1000, referrals: 2 };
         vip = false;
-        lastBonusTime = 0;
+        referrals = ['user1', 'user2'];
     } finally {
         updateUI();
+        renderReferrals();
         loader.classList.add('hidden');
         main.classList.remove('hidden');
         loadLeaderboard(); // загружаем топ
-        updateClickerLimits(); // инициализация лимитов
+        updateClickerLimits();
     }
 }
 
-// --- Лидеры (эмуляция) ---
-function loadLeaderboard() {
-    // В реальности запрос к /api/leaders
-    const mockLeaders = [
-        { name: 'CryptoKing', score: 15000, vip: true },
-        { name: 'LuckyOne', score: 12000, vip: false },
-        { name: 'Player123', score: 9000, vip: true },
-        { name: 'DangerUser', score: 7500, vip: false },
-        { name: 'VIP_Gamer', score: 5000, vip: true },
-    ];
-    renderLeaders(mockLeaders);
+// --- Рефералы ---
+function renderReferrals() {
+    refCountSpan.innerText = referrals.length;
+    refEarnedSpan.innerText = referrals.length * 500;
+    let html = '';
+    referrals.forEach(name => {
+        html += `<li class="ref-item">${name} <span class="ref-bonus">+500</span></li>`;
+    });
+    if (referrals.length === 0) html = '<li class="ref-item">Пока никого</li>';
+    refListUl.innerHTML = html;
+}
+
+copyRefBtn.addEventListener('click', () => {
+    refLinkInput.select();
+    navigator.clipboard.writeText(refLinkInput.value).then(() => {
+        showMessage('Ссылка скопирована!');
+    }).catch(() => {
+        showMessage('Не удалось скопировать');
+    });
+});
+
+// --- Лидеры (реальные) ---
+async function loadLeaderboard() {
+    try {
+        const res = await fetch("/api/leaders");
+        if (!res.ok) throw new Error('Ошибка загрузки топа');
+        const leaders = await res.json();
+        renderLeaders(leaders);
+    } catch (error) {
+        console.error('Leaderboard error, using mock', error);
+        // Заглушка на случай отсутствия эндпоинта
+        const mockLeaders = [
+            { name: 'CryptoKing', score: 15000, vip: true },
+            { name: 'LuckyOne', score: 12000, vip: false },
+            { name: 'Player123', score: 9000, vip: true },
+        ];
+        renderLeaders(mockLeaders);
+    }
 }
 
 function renderLeaders(leaders) {
@@ -187,18 +195,8 @@ navBtns.forEach(btn => {
     });
 });
 
-// --- Рефералы: копирование ---
-copyRefBtn.addEventListener('click', () => {
-    refLinkInput.select();
-    navigator.clipboard.writeText(refLinkInput.value).then(() => {
-        showMessage('Ссылка скопирована!');
-    }).catch(() => {
-        showMessage('Не удалось скопировать');
-    });
-});
-
-// --- Ежедневный бонус ---
-dailyBonusBtn.addEventListener('click', () => {
+// --- Ежедневный бонус (только для VIP) ---
+dailyBonusBtn.addEventListener('click', async () => {
     const now = Date.now();
     const oneDay = 24 * 60 * 60 * 1000;
     if (now - lastBonusTime < oneDay) {
@@ -207,17 +205,29 @@ dailyBonusBtn.addEventListener('click', () => {
         return;
     }
     
-    // Генерируем бонус
-    const bonus = Math.floor(Math.random() * (5000 - 500 + 1)) + 500;
-    userData.coins += bonus;
-    lastBonusTime = now;
-    updateUI();
-    showMessage(`🎉 Вы получили ${bonus} монет!`);
-    
-    // Здесь нужно отправить на сервер
+    try {
+        const res = await fetch("/api/daily-bonus", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ telegramId })
+        });
+        if (!res.ok) throw new Error('Ошибка');
+        const data = await res.json();
+        userData.coins = data.coins;
+        lastBonusTime = Date.now();
+        updateUI();
+        showMessage(`🎉 Вы получили ${data.bonus} монет!`);
+    } catch (error) {
+        // Локальная имитация
+        const bonus = Math.floor(Math.random() * (5000 - 500 + 1)) + 500;
+        userData.coins += bonus;
+        lastBonusTime = now;
+        updateUI();
+        showMessage(`🎉 Вы получили ${bonus} монет! (локально)`);
+    }
 });
 
-// --- Кейсы (с улучшенными шансами) ---
+// --- Кейсы ---
 caseButtons.forEach(btn => {
     btn.addEventListener('click', (e) => {
         const caseCard = e.target.closest('.case-card');
@@ -237,36 +247,49 @@ async function openCase(type, caseCard) {
     userData.coins -= prices[type];
     updateUI();
     
-    setTimeout(() => {
-        caseCard.classList.remove('opening');
-        
-        let reward = 0;
-        const rand = Math.random();
-        
-        if (type === 'common') {
-            if (rand < 0.5) reward = Math.floor(Math.random() * 50) + 50;
-            else if (rand < 0.8) reward = Math.floor(Math.random() * 100) + 150;
-            else reward = Math.floor(Math.random() * 300) + 300;
-        } else if (type === 'rare') {
-            if (rand < 0.4) reward = Math.floor(Math.random() * 200) + 300;
-            else if (rand < 0.7) reward = Math.floor(Math.random() * 300) + 600;
-            else reward = Math.floor(Math.random() * 500) + 1000;
-        } else {
-            if (rand < 0.3) reward = Math.floor(Math.random() * 500) + 1000;
-            else if (rand < 0.6) reward = Math.floor(Math.random() * 1000) + 1500;
-            else reward = Math.floor(Math.random() * 3000) + 2500;
+    try {
+        const res = await fetch("/api/case", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ telegramId, type })
+        });
+        const data = await res.json();
+        if (data.error) {
+            showMessage(data.error);
+            return;
         }
-        
-        userData.coins += reward;
+        userData.coins = data.coins;
         updateUI();
-        showMessage(`✨ Вы выиграли ${reward} монет!`);
-        
-        caseCard.style.boxShadow = '0 0 30px gold';
-        setTimeout(() => caseCard.style.boxShadow = '', 500);
-    }, 600);
+        showMessage(`✨ Вы выиграли ${data.reward} монет!`);
+    } catch (error) {
+        // Локальная имитация
+        setTimeout(() => {
+            caseCard.classList.remove('opening');
+            let reward = 0;
+            const rand = Math.random();
+            if (type === 'common') {
+                if (rand < 0.5) reward = Math.floor(Math.random() * 50) + 50;
+                else if (rand < 0.8) reward = Math.floor(Math.random() * 100) + 150;
+                else reward = Math.floor(Math.random() * 300) + 300;
+            } else if (type === 'rare') {
+                if (rand < 0.4) reward = Math.floor(Math.random() * 200) + 300;
+                else if (rand < 0.7) reward = Math.floor(Math.random() * 300) + 600;
+                else reward = Math.floor(Math.random() * 500) + 1000;
+            } else {
+                if (rand < 0.3) reward = Math.floor(Math.random() * 500) + 1000;
+                else if (rand < 0.6) reward = Math.floor(Math.random() * 1000) + 1500;
+                else reward = Math.floor(Math.random() * 3000) + 2500;
+            }
+            userData.coins += reward;
+            updateUI();
+            showMessage(`✨ Вы выиграли ${reward} монет! (локально)`);
+            caseCard.style.boxShadow = '0 0 30px gold';
+            setTimeout(() => caseCard.style.boxShadow = '', 500);
+        }, 600);
+    }
 }
 
-// --- Рулетка с переменной ставкой ---
+// --- Рулетка ---
 document.querySelectorAll('.color-btn').forEach(btn => {
     btn.addEventListener('click', () => {
         document.querySelectorAll('.color-btn').forEach(b => b.classList.remove('selected'));
@@ -321,16 +344,19 @@ rouletteSpin.addEventListener('click', () => {
     }, 2000);
 });
 
-// --- Блэкджек улучшенный ---
-function createCardElement(value) {
+// --- Блэкджек (с закрытой картой дилера) ---
+function createCardElement(value, hidden = false) {
     const card = document.createElement('div');
     card.className = 'card';
-    card.innerText = value;
-    // Определяем масть для красоты (случайно)
-    const suits = ['♥', '♦', '♠', '♣'];
-    const suit = suits[Math.floor(Math.random() * suits.length)];
-    card.setAttribute('data-suit', suit);
-    card.innerText = value + suit;
+    if (hidden) {
+        card.classList.add('back');
+        card.innerText = '';
+    } else {
+        const suits = ['♥', '♦', '♠', '♣'];
+        const suit = suits[Math.floor(Math.random() * suits.length)];
+        card.setAttribute('data-suit', suit);
+        card.innerText = value + suit;
+    }
     return card;
 }
 
@@ -338,16 +364,22 @@ function renderBlackjack() {
     dealerCardsDiv.innerHTML = '';
     playerCardsDiv.innerHTML = '';
     
-    dealerHand.forEach(card => {
-        dealerCardsDiv.appendChild(createCardElement(card));
-    });
-    playerHand.forEach(card => {
-        playerCardsDiv.appendChild(createCardElement(card));
+    // Для дилера: первая карта открыта, остальные скрыты, если игра активна
+    dealerHand.forEach((card, index) => {
+        if (gameActive && index === 1) {
+            dealerCardsDiv.appendChild(createCardElement(card, true));
+        } else {
+            dealerCardsDiv.appendChild(createCardElement(card, false));
+        }
     });
     
-    const dealerSum = calcHand(dealerHand);
+    playerHand.forEach(card => {
+        playerCardsDiv.appendChild(createCardElement(card, false));
+    });
+    
+    const dealerSum = gameActive ? '?' : calcHand(dealerHand);
     const playerSum = calcHand(playerHand);
-    dealerSumSpan.innerText = dealerSum ? `Сумма: ${dealerSum}` : '';
+    dealerSumSpan.innerText = dealerSum !== '?' ? `Сумма: ${dealerSum}` : '';
     playerSumSpan.innerText = playerSum ? `Сумма: ${playerSum}` : '';
 }
 
@@ -433,15 +465,15 @@ blackjackStand.addEventListener('click', () => {
     endBlackjack('stand');
 });
 
-// --- Кликер с лимитом и VIP ---
+// --- Кликер ---
 function updateClickerLimits() {
-    const maxClicks = vip ? 200 : 200; // лимит 200 для всех, но для VIP период 30 мин
+    const maxClicks = 200; // лимит всегда 200
     const period = vip ? 30 * 60 * 1000 : 60 * 60 * 1000; // 30 мин или 1 час
     
-    // Сброс счётчика, если прошёл период
-    if (Date.now() - lastClickResetTime > period) {
+    const now = Date.now();
+    if (now - lastClickResetTime > period) {
         clickCountHour = 0;
-        lastClickResetTime = Date.now();
+        lastClickResetTime = now;
     }
     
     const remaining = Math.max(0, maxClicks - clickCountHour);
@@ -449,11 +481,9 @@ function updateClickerLimits() {
     clicksMaxSpan.innerText = maxClicks;
     clickRewardSpan.innerText = vip ? '5' : '1';
     
-    // Прогресс-бар
     const percent = (clickCountHour / maxClicks) * 100;
     clickProgress.style.width = Math.min(percent, 100) + '%';
     
-    // Блокировка, если лимит исчерпан
     if (clickCountHour >= maxClicks) {
         clickerCoin.classList.add('disabled');
     } else {
@@ -466,7 +496,7 @@ function updateClickerUI() {
 }
 
 clickerCoin.addEventListener('click', () => {
-    const maxClicks = vip ? 200 : 200;
+    const maxClicks = 200;
     if (clickCountHour >= maxClicks) {
         showMessage('Лимит кликов на сегодня исчерпан. Подождите.');
         return;
@@ -486,13 +516,12 @@ clickerCoin.addEventListener('click', () => {
     updateUI();
     updateClickerLimits();
     
-    // Микро-анимация
     clickerCoin.style.transform = 'scale(0.7)';
     setTimeout(() => clickerCoin.style.transform = '', 100);
 });
 
 // --- Магазин: покупка VIP ---
-buyVipBtn.addEventListener('click', () => {
+buyVipBtn.addEventListener('click', async () => {
     if (vip) {
         showMessage('У вас уже есть VIP статус!');
         return;
@@ -502,13 +531,25 @@ buyVipBtn.addEventListener('click', () => {
         return;
     }
     
-    userData.coins -= 10000;
-    vip = true;
-    updateUI();
-    updateClickerLimits(); // обновляем лимиты
-    showMessage('Поздравляем! Вы приобрели VIP статус!');
-    
-    // Здесь нужно отправить на сервер
+    try {
+        const res = await fetch("/api/buy-vip", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ telegramId })
+        });
+        if (!res.ok) throw new Error('Ошибка');
+        const data = await res.json();
+        userData.coins = data.coins;
+        vip = true;
+        updateUI();
+        showMessage('Поздравляем! Вы приобрели VIP статус!');
+    } catch (error) {
+        // Локально
+        userData.coins -= 10000;
+        vip = true;
+        updateUI();
+        showMessage('Поздравляем! Вы приобрели VIP статус! (локально)');
+    }
 });
 
 // --- Запуск ---
