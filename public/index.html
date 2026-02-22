@@ -31,18 +31,15 @@
 
             <!-- Контейнер для экранов -->
             <div id="screens" class="screens">
-                <!-- Экран профиля (с рефералами и бонусом) -->
+                <!-- Экран профиля -->
                 <div class="screen active" id="profile-screen">
                     <h2><i class="fas fa-user-circle"></i> Профиль</h2>
                     <div class="profile-card">
                         <div class="avatar-large"></div>
-                        <div class="profile-name" id="profile-name">
-                            Игрок
-                            <span id="vip-badge-profile" class="vip-badge hidden">VIP</span>
-                        </div>
+                        <div class="profile-name" id="profile-name">Игрок</div>
                         <div class="profile-id" id="profile-id">ID: </div>
                         <div class="profile-balance">Баланс: <span id="profile-balance">0</span> монет</div>
-                        <button id="daily-bonus-btn" class="daily-bonus-btn"><i class="fas fa-gift"></i> Забрать бонус</button>
+                        <button id="daily-bonus-btn" class="daily-bonus-btn vip-only hidden"><i class="fas fa-gift"></i> Забрать бонус</button>
                     </div>
 
                     <!-- Блок рефералов -->
@@ -59,20 +56,15 @@
                         </div>
                         <div class="ref-list">
                             <h4>Приглашённые:</h4>
-                            <ul id="ref-list">
-                                <li class="ref-item">player1 <span class="ref-bonus">+500</span></li>
-                                <li class="ref-item">crypto_fan <span class="ref-bonus">+500</span></li>
-                            </ul>
+                            <ul id="ref-list"></ul>
                         </div>
                     </div>
                 </div>
 
-                <!-- Экран лидеров (Топ) -->
+                <!-- Экран лидеров -->
                 <div class="screen" id="leaders-screen">
                     <h2><i class="fas fa-trophy"></i> Топ игроков</h2>
-                    <div class="leaders-container" id="leaders-container">
-                        <!-- Здесь будет динамический список -->
-                    </div>
+                    <div class="leaders-container" id="leaders-container"></div>
                 </div>
 
                 <!-- Экран кейсов -->
@@ -106,7 +98,7 @@
                     </div>
                 </div>
 
-                <!-- Экран рулетки с возможностью ввода ставки -->
+                <!-- Экран рулетки -->
                 <div class="screen" id="roulette-screen">
                     <h2><i class="fas fa-wheelchair"></i> Рулетка</h2>
                     <div class="game-container">
@@ -133,7 +125,7 @@
                     </div>
                 </div>
 
-                <!-- Экран блэкджека (улучшенный) -->
+                <!-- Экран блэкджека (исправленный) -->
                 <div class="screen" id="blackjack-screen">
                     <h2><i class="fas fa-club"></i> Блэкджек</h2>
                     <div class="game-container">
@@ -159,7 +151,7 @@
                     </div>
                 </div>
 
-                <!-- Экран кликера с лимитом -->
+                <!-- Экран кликера -->
                 <div class="screen" id="clicker-screen">
                     <h2><i class="fas fa-hand-pointer"></i> Кликер</h2>
                     <div class="clicker-container">
@@ -198,7 +190,7 @@
                 </div>
             </div>
 
-            <!-- Нижняя навигация (профиль справа) -->
+            <!-- Нижняя навигация -->
             <nav class="bottom-nav">
                 <button class="nav-btn" data-screen="leaders"><i class="fas fa-trophy"></i></button>
                 <button class="nav-btn" data-screen="cases"><i class="fas fa-box-open"></i></button>
