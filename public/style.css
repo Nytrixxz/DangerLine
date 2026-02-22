@@ -1,12 +1,19 @@
+/* =======================
+   Основные настройки
+======================= */
 body{
   margin:0;
-  font-family:Inter,sans-serif;
+  font-family:"Manrope",Inter,sans-serif;
   background:#0f1115;
   color:#fff;
+  overflow-x:hidden;
 }
 
 .hidden{display:none;}
 
+/* =======================
+   Загрузчик
+======================= */
 #loader{
   position:fixed;
   inset:0;
@@ -14,23 +21,44 @@ body{
   justify-content:center;
   align-items:center;
   background:#0f1115;
+  z-index:1000;
+  flex-direction:column;
+  animation:fadeIn 0.5s forwards;
 }
 
-.logo{
-  font-size:28px;
-  letter-spacing:4px;
+.loader-logo{
+  font-size:36px;
   color:#c42030;
+  letter-spacing:5px;
+  text-shadow:0 0 10px #c42030,0 0 20px #c42030;
+  animation:logoPulse 1.5s infinite alternate;
 }
 
+@keyframes logoPulse{
+  0%{transform:scale(0.9);}
+  100%{transform:scale(1);}
+}
+
+/* =======================
+   Sidebar
+======================= */
 .sidebar{
-  width:200px;
-  background:#151821;
+  width:220px;
+  background:rgba(25,25,35,0.95);
   position:fixed;
   height:100%;
   padding:20px;
   display:flex;
   flex-direction:column;
-  gap:10px;
+  gap:15px;
+  backdrop-filter:blur(10px);
+}
+
+.sidebar .brand{
+  font-size:28px;
+  font-weight:bold;
+  color:#c42030;
+  margin-bottom:20px;
 }
 
 .sidebar button{
@@ -39,51 +67,121 @@ body{
   color:#aaa;
   text-align:left;
   cursor:pointer;
+  font-size:16px;
+  padding:8px 0;
+  transition:0.3s;
 }
 
 .sidebar button:hover{
   color:#fff;
 }
 
+/* =======================
+   Контент
+======================= */
 .content{
-  margin-left:200px;
-  padding:20px;
+  margin-left:220px;
+  padding:25px;
 }
 
-.screen{display:none;}
-.screen.active{display:block;}
+header{
+  display:flex;
+  justify-content:space-between;
+  margin-bottom:20px;
+}
 
+/* =======================
+   Экраны
+======================= */
+.screen{display:none; opacity:0; transform:translateY(20px); transition:0.4s;}
+.screen.active{display:block; opacity:1; transform:translateY(0);}
+
+/* =======================
+   Карточки / Кейсы
+======================= */
 .card{
-  background:#1a1f2b;
+  background:rgba(25,25,35,0.8);
   padding:20px;
+  border-radius:12px;
+  box-shadow:0 4px 20px rgba(0,0,0,0.4);
+}
+
+.mining button.clicker-btn{
+  font-size:18px;
+  padding:12px 20px;
   border-radius:10px;
-}
-
-button{
-  background:#c42030;
   border:none;
-  padding:10px 15px;
-  color:#fff;
-  border-radius:6px;
+  background:#7f3fff;
+  box-shadow:0 0 15px #7f3fff80;
   cursor:pointer;
+  transition:0.2s;
 }
 
+.mining button.clicker-btn:hover{
+  transform:scale(1.05);
+  box-shadow:0 0 25px #a066ff80;
+}
+
+/* =======================
+   Roulette Wheel
+======================= */
 .wheel{
-  width:200px;
-  height:200px;
+  width:220px;
+  height:220px;
   border-radius:50%;
-  background:conic-gradient(
-    red 0 10%,
-    black 10% 20%,
-    red 20% 30%,
-    black 30% 40%,
-    red 40% 50%,
-    black 50% 60%,
-    red 60% 70%,
-    black 70% 80%,
-    red 80% 90%,
-    black 90% 100%
-  );
   margin:20px 0;
+  background:conic-gradient(
+    red 0 10%, black 10% 20%, red 20% 30%, black 30% 40%,
+    red 40% 50%, black 50% 60%, red 60% 70%, black 70% 80%,
+    red 80% 90%, black 90% 100%
+  );
   transition:transform 3s cubic-bezier(.17,.67,.83,.67);
+  box-shadow:0 0 20px #000 inset;
+}
+
+/* =======================
+   Кейсы
+======================= */
+.case{
+  background:rgba(40,40,60,0.8);
+  padding:15px;
+  margin:10px 0;
+  border-radius:10px;
+  cursor:pointer;
+  transition:0.4s;
+  box-shadow:0 0 10px #000 inset;
+}
+
+.case.common:hover{box-shadow:0 0 15px #999;}
+.case.rare:hover{box-shadow:0 0 15px #3f51ff;}
+.case.legendary{
+  box-shadow:0 0 15px gold;
+  background:rgba(40,40,60,0.9);
+  color:gold;
+  font-weight:bold;
+}
+.case.legendary:hover{
+  transform:scale(1.05);
+  box-shadow:0 0 25px gold;
+}
+
+/* =======================
+   Leaderboard
+======================= */
+#leaders{
+  list-style:none;
+  padding:0;
+}
+
+#leaders li{
+  padding:8px;
+  border-bottom:1px solid rgba(255,255,255,0.1);
+}
+
+/* =======================
+   Анимации
+======================= */
+@keyframes fadeIn{
+  from{opacity:0;}
+  to{opacity:1;}
 }
