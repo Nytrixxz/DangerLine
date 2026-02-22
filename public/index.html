@@ -1,3 +1,4 @@
+<!-- index.html -->
 <!DOCTYPE html>
 <html lang="ru">
 <head>
@@ -31,7 +32,7 @@
 
             <!-- Контейнер для экранов -->
             <div id="screens" class="screens">
-                <!-- Экран профиля -->
+                <!-- Экран профиля (без бонуса и списка рефералов) -->
                 <div class="screen active" id="profile-screen">
                     <h2><i class="fas fa-user-circle"></i> Профиль</h2>
                     <div class="profile-card">
@@ -39,10 +40,9 @@
                         <div class="profile-name" id="profile-name">Игрок</div>
                         <div class="profile-id" id="profile-id">ID: </div>
                         <div class="profile-balance">Баланс: <span id="profile-balance">0</span> монет</div>
-                        <button id="daily-bonus-btn" class="daily-bonus-btn vip-only hidden"><i class="fas fa-gift"></i> Забрать бонус</button>
                     </div>
 
-                    <!-- Блок рефералов -->
+                    <!-- Блок рефералов (только количество) -->
                     <div class="referrals-section">
                         <h3><i class="fas fa-users"></i> Реферальная программа</h3>
                         <p class="ref-info">Приглашайте друзей и получайте <strong>500 монет</strong> за каждого!</p>
@@ -53,10 +53,6 @@
                         <div class="ref-stats">
                             <p>Приглашено: <span id="ref-count">0</span></p>
                             <p>Заработано: <span id="ref-earned">0</span> монет</p>
-                        </div>
-                        <div class="ref-list">
-                            <h4>Приглашённые:</h4>
-                            <ul id="ref-list"></ul>
                         </div>
                     </div>
                 </div>
@@ -98,7 +94,7 @@
                     </div>
                 </div>
 
-                <!-- Экран рулетки -->
+                <!-- Экран рулетки (только красное/чёрное) -->
                 <div class="screen" id="roulette-screen">
                     <h2><i class="fas fa-wheelchair"></i> Рулетка</h2>
                     <div class="game-container">
@@ -117,7 +113,6 @@
                             <div class="color-selector">
                                 <button class="color-btn red" data-color="red">Красное (x2)</button>
                                 <button class="color-btn black" data-color="black">Чёрное (x2)</button>
-                                <button class="color-btn green" data-color="green">Зелёное (x14)</button>
                             </div>
                             <button id="roulette-spin" class="game-btn"><i class="fas fa-play"></i> Крутить</button>
                         </div>
@@ -125,7 +120,7 @@
                     </div>
                 </div>
 
-                <!-- Экран блэкджека (исправленный) -->
+                <!-- Экран блэкджека (без изменений) -->
                 <div class="screen" id="blackjack-screen">
                     <h2><i class="fas fa-club"></i> Блэкджек</h2>
                     <div class="game-container">
@@ -151,53 +146,29 @@
                     </div>
                 </div>
 
-                <!-- Экран кликера -->
+                <!-- Экран кликера (0.1 за клик) -->
                 <div class="screen" id="clicker-screen">
                     <h2><i class="fas fa-hand-pointer"></i> Кликер</h2>
                     <div class="clicker-container">
                         <div class="coin" id="clicker-coin">
                             <i class="fas fa-coins"></i>
                         </div>
-                        <p>Кликай на монету!</p>
-                        <p>За клик: <strong id="click-reward">1</strong> монета</p>
-                        <p>Осталось кликов: <span id="clicks-left">200</span> / <span id="clicks-max">200</span></p>
+                        <p>Кликай на монету! <strong>+0.1</strong> монеты за клик</p>
                         <p>Заработано здесь: <span id="clicker-earned">0</span></p>
-                        <div class="clicker-progress">
-                            <div class="progress-bar" id="click-progress"></div>
-                        </div>
                     </div>
                 </div>
 
-                <!-- Экран магазина -->
-                <div class="screen" id="shop-screen">
-                    <h2><i class="fas fa-store"></i> Магазин</h2>
-                    <div class="shop-container">
-                        <div class="shop-card" id="vip-card">
-                            <div class="shop-icon"><i class="fas fa-crown"></i></div>
-                            <div class="shop-info">
-                                <div class="shop-title">VIP Статус</div>
-                                <div class="shop-price">10 000 монет</div>
-                                <div class="shop-description">
-                                    <p>✨ +5 монет за клик в кликере</p>
-                                    <p>⏱️ Лимит кликов: 200 за 30 минут</p>
-                                    <p>👑 Префикс VIP в профиле и топе</p>
-                                    <p>🎁 Ежедневный бонус от 500 до 5000 монет</p>
-                                </div>
-                                <button id="buy-vip-btn" class="buy-btn">Купить VIP</button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+                <!-- Магазин (временно скрыт, так как сервер не поддерживает VIP) -->
+                <!-- Можно оставить или убрать совсем -->
             </div>
 
-            <!-- Нижняя навигация -->
+            <!-- Нижняя навигация (без магазина) -->
             <nav class="bottom-nav">
                 <button class="nav-btn" data-screen="leaders"><i class="fas fa-trophy"></i></button>
                 <button class="nav-btn" data-screen="cases"><i class="fas fa-box-open"></i></button>
                 <button class="nav-btn" data-screen="roulette"><i class="fas fa-wheelchair"></i></button>
                 <button class="nav-btn" data-screen="blackjack"><i class="fas fa-club"></i></button>
                 <button class="nav-btn" data-screen="clicker"><i class="fas fa-hand-pointer"></i></button>
-                <button class="nav-btn" data-screen="shop"><i class="fas fa-store"></i></button>
                 <button class="nav-btn active" data-screen="profile"><i class="fas fa-user"></i></button>
             </nav>
         </div>
