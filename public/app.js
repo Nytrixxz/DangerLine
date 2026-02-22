@@ -20,69 +20,102 @@ const usernameSpan = document.getElementById('username');
 const profileNameSpan = document.getElementById('profile-name');
 const profileIdSpan = document.getElementById('profile-id');
 const profileBalanceSpan = document.getElementById('profile-balance');
+const vipBadgeProfile = document.getElementById('vip-badge-profile');
+const dailyBonusBtn = document.getElementById('daily-bonus-btn');
 const refLinkInput = document.getElementById('ref-link');
 const refCountSpan = document.getElementById('ref-count');
 const refEarnedSpan = document.getElementById('ref-earned');
 const refListUl = document.getElementById('ref-list');
 const copyRefBtn = document.getElementById('copy-ref');
 
-// Экраны и навигация
-const screens = document.querySelectorAll('.screen');
-const navBtns = document.querySelectorAll('.nav-btn');
-
-// Игровые элементы
-const rouletteSpin = document.getElementById('roulette-spin');
-const blackjackPlay = document.getElementById('blackjack-play');
-const blackjackHit = document.getElementById('blackjack-hit');
-const blackjackStand = document.getElementById('blackjack-stand');
-const rouletteResult = document.getElementById('roulette-result');
-const blackjackResult = document.getElementById('blackjack-result');
-const dealerCardsSpan = document.getElementById('dealer-cards');
-const playerCardsSpan = document.getElementById('player-cards');
+// Лидеры
+const leadersContainer = document.getElementById('leaders-container');
 
 // Кейсы
 const caseButtons = document.querySelectorAll('.open-case-btn');
 
+// Рулетка
+const rouletteSpin = document.getElementById('roulette-spin');
+const rouletteBet = document.getElementById('roulette-bet');
+const rouletteResult = document.getElementById('roulette-result');
+
+// Блэкджек
+const blackjackPlay = document.getElementById('blackjack-play');
+const blackjackHit = document.getElementById('blackjack-hit');
+const blackjackStand = document.getElementById('blackjack-stand');
+const blackjackResult = document.getElementById('blackjack-result');
+const dealerCardsDiv = document.getElementById('dealer-cards');
+const playerCardsDiv = document.getElementById('player-cards');
+const dealerSumSpan = document.getElementById('dealer-sum');
+const playerSumSpan = document.getElementById('player-sum');
+
 // Кликер
 const clickerCoin = document.getElementById('clicker-coin');
 const clickerEarned = document.getElementById('clicker-earned');
-let clickCount = 0;
-let lastClickTime = 0;
-const CLICK_DELAY = 100; // минимальный интервал между кликами (мс)
+const clickRewardSpan = document.getElementById('click-reward');
+const clicksLeftSpan = document.getElementById('clicks-left');
+const clicksMaxSpan = document.getElementById('clicks-max');
+const clickProgress = document.getElementById('click-progress');
 
-// Вспомогательные функции
+// Магазин
+const buyVipBtn = document.getElementById('buy-vip-btn');
+
+// Экраны и навигация
+const screens = document.querySelectorAll('.screen');
+const navBtns = document.querySelectorAll('.nav-btn');
+
+// --- Состояние ---
+let selectedColor = 'red';
+let playerHand = [], dealerHand = [], gameActive = false;
+let clickCountHour = 0, lastClickResetTime = Date.now();
+let vip = false; // будет загружаться с сервера
+let lastBonusTime = 0; // timestamp последнего бонуса
+
+// --- Вспомогательные функции ---
 function showMessage(msg) {
     if (tg) tg.showAlert(msg); else alert(msg);
 }
 
 function formatCoins(coins) {
-    return Math.floor(coins); // показываем целые числа
+    return Math.floor(coins);
 }
 
 function updateUI() {
     balanceSpan.innerText = formatCoins(userData.coins);
     usernameSpan.innerText = username;
-    profileNameSpan.innerText = username;
+    profileNameSpan.innerHTML = username + (vip ? '<span class="vip-badge">VIP</span>' : '');
     profileIdSpan.innerText = `ID: ${telegramId || 'unknown'}`;
     profileBalanceSpan.innerText = formatCoins(userData.coins);
+    
+    // Видимость VIP-бейджа в профиле
+    if (vip) {
+        vipBadgeProfile.classList.remove('hidden');
+    } else {
+        vipBadgeProfile.classList.add('hidden');
+    }
+    
+    // Обновляем реферальную ссылку
     const refLink = `https://t.me/dangerline_bot?start=${telegramId || ''}`;
     refLinkInput.value = refLink;
     refCountSpan.innerText = userData.referrals || 0;
     refEarnedSpan.innerText = (userData.referrals || 0) * 500;
     
-    // Демо-список рефералов (в реальности запрос к серверу)
+    // Демо-список рефералов
     if (userData.referrals > 0) {
         let html = '';
         for (let i = 0; i < userData.referrals; i++) {
             html += `<li class="ref-item">user${i+1} <span class="ref-bonus">+500</span></li>`;
         }
-        refListUl.innerHTML = html || '<li class="ref-item">Пока никого</li>';
+        refListUl.innerHTML = html;
     } else {
         refListUl.innerHTML = '<li class="ref-item">Пока никого</li>';
     }
+    
+    // Обновляем кликер
+    updateClickerUI();
 }
 
-// --- Вход в систему ---
+// --- Загрузка данных с сервера (имитация) ---
 async function login() {
     try {
         const res = await fetch("/api/login", {
@@ -92,14 +125,54 @@ async function login() {
         });
         if (!res.ok) throw new Error('Network error');
         userData = await res.json();
+        // Предполагаем, что сервер возвращает { coins, referrals, vip, lastBonusTime? }
+        vip = userData.vip || false;
+        lastBonusTime = userData.lastBonusTime || 0;
     } catch (error) {
         console.error('Login failed, using local data');
-        userData = { coins: 1000, referrals: 3 }; // для теста покажем 3 рефералов
+        userData = { coins: 20000, referrals: 2 }; // для теста
+        vip = false;
+        lastBonusTime = 0;
     } finally {
         updateUI();
         loader.classList.add('hidden');
         main.classList.remove('hidden');
+        loadLeaderboard(); // загружаем топ
+        updateClickerLimits(); // инициализация лимитов
     }
+}
+
+// --- Лидеры (эмуляция) ---
+function loadLeaderboard() {
+    // В реальности запрос к /api/leaders
+    const mockLeaders = [
+        { name: 'CryptoKing', score: 15000, vip: true },
+        { name: 'LuckyOne', score: 12000, vip: false },
+        { name: 'Player123', score: 9000, vip: true },
+        { name: 'DangerUser', score: 7500, vip: false },
+        { name: 'VIP_Gamer', score: 5000, vip: true },
+    ];
+    renderLeaders(mockLeaders);
+}
+
+function renderLeaders(leaders) {
+    let html = '';
+    leaders.forEach((leader, index) => {
+        html += `
+            <div class="leader-item">
+                <div class="leader-rank">#${index+1}</div>
+                <div class="leader-avatar"></div>
+                <div class="leader-info">
+                    <div class="leader-name">
+                        ${leader.name}
+                        ${leader.vip ? '<span class="vip-badge-small">VIP</span>' : ''}
+                    </div>
+                    <div class="leader-score">${leader.score} монет</div>
+                </div>
+            </div>
+        `;
+    });
+    leadersContainer.innerHTML = html;
 }
 
 // --- Навигация ---
@@ -114,7 +187,7 @@ navBtns.forEach(btn => {
     });
 });
 
-// --- Рефералы: копирование ссылки ---
+// --- Рефералы: копирование ---
 copyRefBtn.addEventListener('click', () => {
     refLinkInput.select();
     navigator.clipboard.writeText(refLinkInput.value).then(() => {
@@ -124,7 +197,27 @@ copyRefBtn.addEventListener('click', () => {
     });
 });
 
-// --- Кейсы с анимацией и шансами ---
+// --- Ежедневный бонус ---
+dailyBonusBtn.addEventListener('click', () => {
+    const now = Date.now();
+    const oneDay = 24 * 60 * 60 * 1000;
+    if (now - lastBonusTime < oneDay) {
+        const hoursLeft = Math.ceil((oneDay - (now - lastBonusTime)) / (60*60*1000));
+        showMessage(`Бонус можно будет взять через ${hoursLeft} ч.`);
+        return;
+    }
+    
+    // Генерируем бонус
+    const bonus = Math.floor(Math.random() * (5000 - 500 + 1)) + 500;
+    userData.coins += bonus;
+    lastBonusTime = now;
+    updateUI();
+    showMessage(`🎉 Вы получили ${bonus} монет!`);
+    
+    // Здесь нужно отправить на сервер
+});
+
+// --- Кейсы (с улучшенными шансами) ---
 caseButtons.forEach(btn => {
     btn.addEventListener('click', (e) => {
         const caseCard = e.target.closest('.case-card');
@@ -140,51 +233,40 @@ async function openCase(type, caseCard) {
         return;
     }
     
-    // Анимация открытия
     caseCard.classList.add('opening');
-    
-    // Списываем монеты
     userData.coins -= prices[type];
     updateUI();
     
-    // Имитация задержки открытия
-    setTimeout(async () => {
+    setTimeout(() => {
         caseCard.classList.remove('opening');
         
-        // Определяем выигрыш с учётом шансов
         let reward = 0;
         const rand = Math.random();
         
         if (type === 'common') {
-            // Обычный кейс: шансы и выигрыши
-            if (rand < 0.5) reward = Math.floor(Math.random() * 50) + 50;   // 50-100 (50%)
-            else if (rand < 0.8) reward = Math.floor(Math.random() * 100) + 150; // 150-250 (30%)
-            else reward = Math.floor(Math.random() * 300) + 300; // 300-600 (20%)
+            if (rand < 0.5) reward = Math.floor(Math.random() * 50) + 50;
+            else if (rand < 0.8) reward = Math.floor(Math.random() * 100) + 150;
+            else reward = Math.floor(Math.random() * 300) + 300;
         } else if (type === 'rare') {
-            // Редкий кейс
-            if (rand < 0.4) reward = Math.floor(Math.random() * 200) + 300;   // 300-500 (40%)
-            else if (rand < 0.7) reward = Math.floor(Math.random() * 300) + 600; // 600-900 (30%)
-            else reward = Math.floor(Math.random() * 500) + 1000; // 1000-1500 (30%)
-        } else if (type === 'legendary') {
-            // Легендарный кейс
-            if (rand < 0.3) reward = Math.floor(Math.random() * 500) + 1000;   // 1000-1500 (30%)
-            else if (rand < 0.6) reward = Math.floor(Math.random() * 1000) + 1500; // 1500-2500 (30%)
-            else reward = Math.floor(Math.random() * 3000) + 2500; // 2500-5500 (40%)
+            if (rand < 0.4) reward = Math.floor(Math.random() * 200) + 300;
+            else if (rand < 0.7) reward = Math.floor(Math.random() * 300) + 600;
+            else reward = Math.floor(Math.random() * 500) + 1000;
+        } else {
+            if (rand < 0.3) reward = Math.floor(Math.random() * 500) + 1000;
+            else if (rand < 0.6) reward = Math.floor(Math.random() * 1000) + 1500;
+            else reward = Math.floor(Math.random() * 3000) + 2500;
         }
         
         userData.coins += reward;
         updateUI();
         showMessage(`✨ Вы выиграли ${reward} монет!`);
         
-        // Дополнительная вспышка
         caseCard.style.boxShadow = '0 0 30px gold';
         setTimeout(() => caseCard.style.boxShadow = '', 500);
-        
-    }, 600); // длительность анимации
+    }, 600);
 }
 
-// --- Рулетка ---
-let selectedColor = 'red';
+// --- Рулетка с переменной ставкой ---
 document.querySelectorAll('.color-btn').forEach(btn => {
     btn.addEventListener('click', () => {
         document.querySelectorAll('.color-btn').forEach(b => b.classList.remove('selected'));
@@ -194,15 +276,16 @@ document.querySelectorAll('.color-btn').forEach(btn => {
 });
 
 rouletteSpin.addEventListener('click', () => {
-    const bet = 10;
-    if (userData.coins < bet) {
+    let bet = parseInt(rouletteBet.value);
+    if (isNaN(bet) || bet < 10) bet = 10;
+    if (bet > userData.coins) {
         showMessage('Недостаточно монет');
         return;
     }
+    
     userData.coins -= bet;
     updateUI();
 
-    // Анимация вращения
     const wheel = document.getElementById('roulette-wheel');
     wheel.classList.add('spinning');
     rouletteResult.innerText = 'Крутим...';
@@ -210,7 +293,6 @@ rouletteSpin.addEventListener('click', () => {
     setTimeout(() => {
         wheel.classList.remove('spinning');
         
-        // Результат с реалистичными шансами
         const rand = Math.random();
         let result;
         if (rand < 0.45) result = 'red';
@@ -227,7 +309,6 @@ rouletteSpin.addEventListener('click', () => {
             rouletteResult.innerText = `😞 Проигрыш. Выпало: ${result === 'red' ? 'красное' : result === 'black' ? 'чёрное' : 'зелёное'}`;
         }
         
-        // Подсветка выпавшего цвета
         const segments = document.querySelectorAll('.wheel-segment');
         segments.forEach(seg => {
             if (seg.classList.contains(result)) {
@@ -240,13 +321,34 @@ rouletteSpin.addEventListener('click', () => {
     }, 2000);
 });
 
-// --- Блэкджек ---
-let playerHand = [];
-let dealerHand = [];
-let gameActive = false;
+// --- Блэкджек улучшенный ---
+function createCardElement(value) {
+    const card = document.createElement('div');
+    card.className = 'card';
+    card.innerText = value;
+    // Определяем масть для красоты (случайно)
+    const suits = ['♥', '♦', '♠', '♣'];
+    const suit = suits[Math.floor(Math.random() * suits.length)];
+    card.setAttribute('data-suit', suit);
+    card.innerText = value + suit;
+    return card;
+}
 
-function getCardValue(card) {
-    return card; // карты храним как числа от 2 до 11
+function renderBlackjack() {
+    dealerCardsDiv.innerHTML = '';
+    playerCardsDiv.innerHTML = '';
+    
+    dealerHand.forEach(card => {
+        dealerCardsDiv.appendChild(createCardElement(card));
+    });
+    playerHand.forEach(card => {
+        playerCardsDiv.appendChild(createCardElement(card));
+    });
+    
+    const dealerSum = calcHand(dealerHand);
+    const playerSum = calcHand(playerHand);
+    dealerSumSpan.innerText = dealerSum ? `Сумма: ${dealerSum}` : '';
+    playerSumSpan.innerText = playerSum ? `Сумма: ${playerSum}` : '';
 }
 
 function calcHand(hand) {
@@ -259,11 +361,6 @@ function calcHand(hand) {
     return sum;
 }
 
-function renderBlackjack() {
-    playerCardsSpan.innerText = playerHand.join(' ') || '—';
-    dealerCardsSpan.innerText = gameActive ? dealerHand[0] + ' ?' : dealerHand.join(' ') || '—';
-}
-
 function startBlackjack() {
     const bet = 10;
     if (userData.coins < bet) {
@@ -273,8 +370,7 @@ function startBlackjack() {
     userData.coins -= bet;
     updateUI();
     
-    // Раздача карт (числа)
-    const deck = [2,3,4,5,6,7,8,9,10,10,10,10,11]; // 10 - валет/дама/король, 11 - туз
+    const deck = [2,3,4,5,6,7,8,9,10,10,10,10,11];
     playerHand = [];
     dealerHand = [];
     for (let i = 0; i < 2; i++) {
@@ -285,7 +381,6 @@ function startBlackjack() {
     renderBlackjack();
     blackjackResult.innerText = '';
     
-    // Проверка на блэкджек (21)
     if (calcHand(playerHand) === 21) {
         endBlackjack('blackjack');
     }
@@ -297,12 +392,11 @@ function endBlackjack(reason) {
     let dealerSum = calcHand(dealerHand);
     
     if (reason === 'blackjack') {
-        userData.coins += 25; // выигрыш 2.5x (имитация)
+        userData.coins += 25;
         blackjackResult.innerText = '🎉 Блэкджек! Вы выиграли 25 монет!';
     } else if (reason === 'bust') {
         blackjackResult.innerText = '😞 Перебор, вы проиграли';
     } else if (reason === 'stand') {
-        // Дилер добирает до 17
         const deck = [2,3,4,5,6,7,8,9,10,10,10,10,11];
         while (calcHand(dealerHand) < 17) {
             dealerHand.push(deck[Math.floor(Math.random() * deck.length)]);
@@ -311,10 +405,10 @@ function endBlackjack(reason) {
         dealerSum = calcHand(dealerHand);
         
         if (dealerSum > 21 || playerSum > dealerSum) {
-            userData.coins += 20; // выигрыш 2x
+            userData.coins += 20;
             blackjackResult.innerText = '🎉 Вы выиграли!';
         } else if (playerSum === dealerSum) {
-            userData.coins += 10; // возврат
+            userData.coins += 10;
             blackjackResult.innerText = 'Ничья';
         } else {
             blackjackResult.innerText = '😞 Дилер выиграл';
@@ -325,7 +419,6 @@ function endBlackjack(reason) {
 }
 
 blackjackPlay.addEventListener('click', startBlackjack);
-
 blackjackHit.addEventListener('click', () => {
     if (!gameActive) return;
     const deck = [2,3,4,5,6,7,8,9,10,10,10,10,11];
@@ -335,30 +428,88 @@ blackjackHit.addEventListener('click', () => {
         endBlackjack('bust');
     }
 });
-
 blackjackStand.addEventListener('click', () => {
     if (!gameActive) return;
     endBlackjack('stand');
 });
 
-// --- Кликер с защитой от авто-кликера ---
+// --- Кликер с лимитом и VIP ---
+function updateClickerLimits() {
+    const maxClicks = vip ? 200 : 200; // лимит 200 для всех, но для VIP период 30 мин
+    const period = vip ? 30 * 60 * 1000 : 60 * 60 * 1000; // 30 мин или 1 час
+    
+    // Сброс счётчика, если прошёл период
+    if (Date.now() - lastClickResetTime > period) {
+        clickCountHour = 0;
+        lastClickResetTime = Date.now();
+    }
+    
+    const remaining = Math.max(0, maxClicks - clickCountHour);
+    clicksLeftSpan.innerText = remaining;
+    clicksMaxSpan.innerText = maxClicks;
+    clickRewardSpan.innerText = vip ? '5' : '1';
+    
+    // Прогресс-бар
+    const percent = (clickCountHour / maxClicks) * 100;
+    clickProgress.style.width = Math.min(percent, 100) + '%';
+    
+    // Блокировка, если лимит исчерпан
+    if (clickCountHour >= maxClicks) {
+        clickerCoin.classList.add('disabled');
+    } else {
+        clickerCoin.classList.remove('disabled');
+    }
+}
+
+function updateClickerUI() {
+    updateClickerLimits();
+}
+
 clickerCoin.addEventListener('click', () => {
-    const now = Date.now();
-    if (now - lastClickTime < CLICK_DELAY) {
-        showMessage('Слишком быстро! Замедлитесь.');
+    const maxClicks = vip ? 200 : 200;
+    if (clickCountHour >= maxClicks) {
+        showMessage('Лимит кликов на сегодня исчерпан. Подождите.');
         return;
     }
-    lastClickTime = now;
     
-    userData.coins += 1;
-    clickCount++;
-    clickerEarned.innerText = clickCount;
+    const now = Date.now();
+    const period = vip ? 30 * 60 * 1000 : 60 * 60 * 1000;
+    if (now - lastClickResetTime > period) {
+        clickCountHour = 0;
+        lastClickResetTime = now;
+    }
+    
+    const reward = vip ? 5 : 1;
+    userData.coins += reward;
+    clickCountHour++;
+    clickerEarned.innerText = clickCountHour;
     updateUI();
+    updateClickerLimits();
     
     // Микро-анимация
     clickerCoin.style.transform = 'scale(0.7)';
     setTimeout(() => clickerCoin.style.transform = '', 100);
 });
 
-// Запуск
+// --- Магазин: покупка VIP ---
+buyVipBtn.addEventListener('click', () => {
+    if (vip) {
+        showMessage('У вас уже есть VIP статус!');
+        return;
+    }
+    if (userData.coins < 10000) {
+        showMessage('Недостаточно монет');
+        return;
+    }
+    
+    userData.coins -= 10000;
+    vip = true;
+    updateUI();
+    updateClickerLimits(); // обновляем лимиты
+    showMessage('Поздравляем! Вы приобрели VIP статус!');
+    
+    // Здесь нужно отправить на сервер
+});
+
+// --- Запуск ---
 login();
