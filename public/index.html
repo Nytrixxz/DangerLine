@@ -1,84 +1,175 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>DangerLine PRO</title>
-<link rel="stylesheet" href="style.css">
-<script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>DangerLine</title>
+    <!-- Font Awesome для иконок -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
+    <div id="app">
+        <!-- Прелоадер -->
+        <div id="loader" class="loader">
+            <div class="spinner"></div>
+            <p>DangerLine</p>
+        </div>
 
-<!-- Загрузочная анимация -->
-<div id="loader">
-  <div class="loader-logo">DANGERLINE</div>
-</div>
+        <!-- Основной интерфейс -->
+        <div id="main" class="hidden">
+            <!-- Шапка с балансом -->
+            <header class="header">
+                <div class="balance-card">
+                    <span class="balance-label">Монеты</span>
+                    <span id="balance" class="balance-value">0</span>
+                </div>
+                <div class="user-info">
+                    <span id="username">Игрок</span>
+                    <div class="avatar"></div>
+                </div>
+            </header>
 
-<div id="app" class="hidden">
+            <!-- Контейнер для экранов -->
+            <div id="screens" class="screens">
+                <!-- Экран профиля (с рефералами) -->
+                <div class="screen active" id="profile-screen">
+                    <h2><i class="fas fa-user-circle"></i> Профиль</h2>
+                    <div class="profile-card">
+                        <div class="avatar-large"></div>
+                        <div class="profile-name" id="profile-name">Игрок</div>
+                        <div class="profile-id" id="profile-id">ID: </div>
+                        <div class="profile-balance">Баланс: <span id="profile-balance">0</span> монет</div>
+                    </div>
 
-  <!-- Sidebar -->
-  <aside class="sidebar">
-    <div class="brand">DL</div>
-    <button onclick="openScreen('dashboard')">Главная</button>
-    <button onclick="openScreen('roulette')">Рулетка</button>
-    <button onclick="openScreen('cases')">Кейсы</button>
-    <button onclick="openScreen('leaderboard')">Лидеры</button>
-    <button onclick="openScreen('profile')">Профиль</button>
-  </aside>
+                    <!-- Блок рефералов -->
+                    <div class="referrals-section">
+                        <h3><i class="fas fa-users"></i> Реферальная программа</h3>
+                        <p class="ref-info">Приглашайте друзей и получайте <strong>500 монет</strong> за каждого!</p>
+                        <div class="ref-link-container">
+                            <input type="text" id="ref-link" readonly value="https://t.me/dangerline_bot?start=">
+                            <button id="copy-ref" class="copy-btn"><i class="fas fa-copy"></i> Копировать</button>
+                        </div>
+                        <div class="ref-stats">
+                            <p>Приглашено: <span id="ref-count">0</span></p>
+                            <p>Заработано: <span id="ref-earned">0</span> монет</p>
+                        </div>
+                        <div class="ref-list">
+                            <h4>Приглашённые:</h4>
+                            <ul id="ref-list">
+                                <!-- Здесь будут динамически добавляться элементы -->
+                                <li class="ref-item">player1 <span class="ref-bonus">+500</span></li>
+                                <li class="ref-item">crypto_fan <span class="ref-bonus">+500</span></li>
+                                <li class="ref-item">user_123 <span class="ref-bonus">+500</span></li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
 
-  <!-- Основной контент -->
-  <main class="content">
-    <header>
-      <div id="username"></div>
-      <div id="balance"></div>
-    </header>
+                <!-- Экран кейсов -->
+                <div class="screen" id="cases-screen">
+                    <h2><i class="fas fa-box-open"></i> Кейсы</h2>
+                    <div class="cases-container">
+                        <div class="case-card" data-type="common">
+                            <div class="case-icon"><i class="fas fa-box"></i></div>
+                            <div class="case-info">
+                                <div class="case-title">Обычный</div>
+                                <div class="case-price">100 монет</div>
+                            </div>
+                            <button class="open-case-btn">Открыть</button>
+                        </div>
+                        <div class="case-card" data-type="rare">
+                            <div class="case-icon"><i class="fas fa-box"></i></div>
+                            <div class="case-info">
+                                <div class="case-title">Редкий</div>
+                                <div class="case-price">500 монет</div>
+                            </div>
+                            <button class="open-case-btn">Открыть</button>
+                        </div>
+                        <div class="case-card" data-type="legendary">
+                            <div class="case-icon"><i class="fas fa-crown"></i></div>
+                            <div class="case-info">
+                                <div class="case-title">Легендарный</div>
+                                <div class="case-price">1000 монет</div>
+                            </div>
+                            <button class="open-case-btn">Открыть</button>
+                        </div>
+                    </div>
+                </div>
 
-    <!-- Dashboard / Clicker -->
-    <section id="dashboard" class="screen active">
-      <div class="card mining">
-        <h3>Майнинг</h3>
-        <button class="clicker-btn" onclick="clickCoin()">+0.1</button>
-      </div>
-    </section>
+                <!-- Экран рулетки -->
+                <div class="screen" id="roulette-screen">
+                    <h2><i class="fas fa-wheelchair"></i> Рулетка</h2>
+                    <div class="game-container">
+                        <div class="roulette-wheel" id="roulette-wheel">
+                            <div class="wheel-segment red"></div>
+                            <div class="wheel-segment black"></div>
+                            <div class="wheel-segment red"></div>
+                            <div class="wheel-segment black"></div>
+                            <div class="wheel-segment red"></div>
+                            <div class="wheel-segment black"></div>
+                            <div class="wheel-segment green"></div>
+                        </div>
+                        <div class="bet-controls">
+                            <p>Ставка: <strong>10 монет</strong></p>
+                            <div class="color-selector">
+                                <button class="color-btn red" data-color="red">Красное (x2)</button>
+                                <button class="color-btn black" data-color="black">Чёрное (x2)</button>
+                                <button class="color-btn green" data-color="green">Зелёное (x14)</button>
+                            </div>
+                            <button id="roulette-spin" class="game-btn"><i class="fas fa-play"></i> Крутить</button>
+                        </div>
+                        <div id="roulette-result" class="result-area"></div>
+                    </div>
+                </div>
 
-    <!-- Roulette -->
-    <section id="roulette" class="screen">
-      <h2>Рулетка</h2>
-      <div class="wheel" id="wheel"></div>
-      <input type="number" id="betAmount" placeholder="Ставка">
-      <select id="betType">
-        <option value="red">Красное</option>
-        <option value="black">Чёрное</option>
-      </select>
-      <button onclick="playRoulette()">Играть</button>
-      <div id="rouletteResult"></div>
-    </section>
+                <!-- Экран блэкджека -->
+                <div class="screen" id="blackjack-screen">
+                    <h2><i class="fas fa-club"></i> Блэкджек</h2>
+                    <div class="game-container">
+                        <div class="blackjack-table">
+                            <div class="dealer-hand">
+                                <span>Дилер: </span>
+                                <span id="dealer-cards">?</span>
+                            </div>
+                            <div class="player-hand">
+                                <span>Вы: </span>
+                                <span id="player-cards"></span>
+                            </div>
+                        </div>
+                        <p>Ставка: <strong>10 монет</strong></p>
+                        <div class="blackjack-controls">
+                            <button id="blackjack-hit" class="game-btn small">Ещё</button>
+                            <button id="blackjack-stand" class="game-btn small">Хватит</button>
+                            <button id="blackjack-play" class="game-btn small">Новая игра</button>
+                        </div>
+                        <div id="blackjack-result" class="result-area"></div>
+                    </div>
+                </div>
 
-    <!-- Cases -->
-    <section id="cases" class="screen">
-      <h2>Кейсы</h2>
-      <div class="case common" onclick="openCase('common')">Common — 100</div>
-      <div class="case rare" onclick="openCase('rare')">Rare — 500</div>
-      <div class="case legendary" onclick="openCase('legendary')">Legendary — 1000</div>
-      <div id="caseResult"></div>
-    </section>
+                <!-- Экран кликера -->
+                <div class="screen" id="clicker-screen">
+                    <h2><i class="fas fa-hand-pointer"></i> Кликер</h2>
+                    <div class="clicker-container">
+                        <div class="coin" id="clicker-coin">
+                            <i class="fas fa-coins"></i>
+                        </div>
+                        <p>Кликай на монету! <strong>+1 монета</strong> за клик</p>
+                        <p>Заработано здесь: <span id="clicker-earned">0</span></p>
+                    </div>
+                </div>
+            </div>
 
-    <!-- Leaderboard -->
-    <section id="leaderboard" class="screen">
-      <h2>Лидеры</h2>
-      <ul id="leaders"></ul>
-    </section>
-
-    <!-- Profile -->
-    <section id="profile" class="screen">
-      <h2>Профиль</h2>
-      <p id="ref"></p>
-    </section>
-
-  </main>
-
-</div>
-
-<script src="app.js"></script>
+            <!-- Нижняя навигация (профиль справа) -->
+            <nav class="bottom-nav">
+                <button class="nav-btn" data-screen="cases"><i class="fas fa-box-open"></i></button>
+                <button class="nav-btn" data-screen="roulette"><i class="fas fa-wheelchair"></i></button>
+                <button class="nav-btn" data-screen="blackjack"><i class="fas fa-club"></i></button>
+                <button class="nav-btn" data-screen="clicker"><i class="fas fa-hand-pointer"></i></button>
+                <button class="nav-btn active" data-screen="profile"><i class="fas fa-user"></i></button>
+            </nav>
+        </div>
+    </div>
+    <script src="app.js"></script>
 </body>
 </html>
