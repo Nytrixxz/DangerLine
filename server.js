@@ -1,79 +1,104 @@
-require("dotenv").config();
-const express = require("express");
-const mongoose = require("mongoose");
-const cors = require("cors");
-const path = require("path");
+const tg = window.Telegram.WebApp;
+tg.expand();
 
-const app = express();
-app.use(cors());
-app.use(express.json());
-app.use(express.static("public"));
+let userData;
+let telegramId = tg.initDataUnsafe.user?.id;
+let username = tg.initDataUnsafe.user?.username || "Player";
 
-mongoose.connect(process.env.MONGO_URI)
-.then(() => console.log("MongoDB подключена"))
-.catch(err => console.log(err));
+document.getElementById("username").innerText = "@" + username;
 
-const userSchema = new mongoose.Schema({
-  telegramId: String,
-  username: String,
-  coins: { type: Number, default: 1000 },
-  referrals: { type: Number, default: 0 },
-  referredBy: String
-});
+async function login(){
+  const res = await fetch("/api/login",{
+    method:"POST",
+    headers:{ "Content-Type":"application/json"},
+    body:JSON.stringify({telegramId, username})
+  });
+  userData = await res.json();
+  updateUI();
 
-const User = mongoose.model("User", userSchema);
+  document.getElementById("loader").style.display="none";
+  document.getElementById("app").classList.remove("hidden");
+}
 
-app.post("/api/login", async (req, res) => {
-  const { telegramId, username, ref } = req.body;
+function updateUI(){
+  document.getElementById("balance").innerText="Монеты: "+userData.coins.toFixed(1);
+  document.getElementById("ref").innerText=
+  "https://t.me/dangerline_bot?start="+telegramId;
+}
 
-  let user = await User.findOne({ telegramId });
+function openScreen(id){
+  document.querySelectorAll(".screen").forEach(s=>s.classList.remove("active"));
+  document.getElementById(id).classList.add("active");
 
-  if (!user) {
-    user = new User({ telegramId, username });
+  if(id==="leaderboard") loadLeaderboard();
+}
 
-    if (ref && ref !== telegramId) {
-      const refUser = await User.findOne({ telegramId: ref });
-      if (refUser) {
-        refUser.coins += 500;
-        refUser.referrals += 1;
-        await refUser.save();
-        user.coins += 200;
-        user.referredBy = ref;
-      }
-    }
+async function clickCoin(){
+  const res = await fetch("/api/click",{
+    method:"POST",
+    headers:{ "Content-Type":"application/json"},
+    body:JSON.stringify({telegramId})
+  });
 
-    await user.save();
+  const data = await res.json();
+  if(data.coins){
+    userData.coins=data.coins;
+    updateUI();
   }
+}
 
-  res.json(user);
-});
+async function playRoulette(){
+  const bet = Number(document.getElementById("betAmount").value);
+  const type = document.getElementById("betType").value;
 
-app.post("/api/click", async (req, res) => {
-  const { telegramId } = req.body;
-  const user = await User.findOne({ telegramId });
-  user.coins += 1;
-  await user.save();
-  res.json({ coins: user.coins });
-});
+  const res = await fetch("/api/roulette",{
+    method:"POST",
+    headers:{ "Content-Type":"application/json"},
+    body:JSON.stringify({telegramId, bet, type})
+  });
 
-app.post("/api/case", async (req, res) => {
-  const { telegramId, type } = req.body;
-  const user = await User.findOne({ telegramId });
+  const data = await res.json();
+  if(data.error) return alert(data.error);
 
-  const prices = { common: 100, rare: 500, legendary: 1000 };
-  if (user.coins < prices[type]) return res.json({ error: "Недостаточно монет" });
+  document.getElementById("wheel").style.transform=
+  `rotate(${3600 + data.number*10}deg)`;
 
-  user.coins -= prices[type];
+  setTimeout(()=>{
+    userData.coins=data.coins;
+    updateUI();
+    document.getElementById("rouletteResult").innerText=
+    "Выпало: "+data.number+" | Выигрыш: "+data.win;
+  },3000);
+}
 
-  let reward = 0;
-  if (type === "common") reward = Math.floor(Math.random() * 200) + 50;
-  if (type === "rare") reward = Math.floor(Math.random() * 700) + 200;
-  if (type === "legendary") reward = Math.floor(Math.random() * 2000) + 500;
+async function openCase(type){
+  const res = await fetch("/api/case",{
+    method:"POST",
+    headers:{ "Content-Type":"application/json"},
+    body:JSON.stringify({telegramId, type})
+  });
 
-  user.coins += reward;
-  await user.save();
+  const data = await res.json();
+  if(data.error) return alert(data.error);
 
-  res.json({ reward, coins: user.coins });
-});
+  document.getElementById("caseResult").innerText=
+  "Вы получили "+data.reward;
 
-app.listen(3000, () => console.log("Сервер запущен на 3000"));
+  userData.coins=data.coins;
+  updateUI();
+}
+
+async function loadLeaderboard(){
+  const res = await fetch("/api/leaderboard");
+  const users = await res.json();
+
+  const list=document.getElementById("leaders");
+  list.innerHTML="";
+  users.forEach(u=>{
+    const li=document.createElement("li");
+    li.innerText=u.username+" — "+u.coins.toFixed(1);
+    list.appendChild(li);
+  });
+}
+
+login();
