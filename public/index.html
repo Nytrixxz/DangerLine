@@ -3,76 +3,80 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>DangerLine</title>
+<title>DangerLine PRO</title>
 <link rel="stylesheet" href="style.css">
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 </head>
 <body>
 
+<!-- Загрузочная анимация -->
 <div id="loader">
-  <div class="logo">DANGERLINE</div>
+  <div class="loader-logo">DANGERLINE</div>
 </div>
 
 <div id="app" class="hidden">
 
-<aside class="sidebar">
-  <div class="brand">DL</div>
-  <button onclick="openScreen('dashboard')">Главная</button>
-  <button onclick="openScreen('roulette')">Рулетка</button>
-  <button onclick="openScreen('cases')">Кейсы</button>
-  <button onclick="openScreen('leaderboard')">Лидеры</button>
-  <button onclick="openScreen('profile')">Профиль</button>
-</aside>
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="brand">DL</div>
+    <button onclick="openScreen('dashboard')">Главная</button>
+    <button onclick="openScreen('roulette')">Рулетка</button>
+    <button onclick="openScreen('cases')">Кейсы</button>
+    <button onclick="openScreen('leaderboard')">Лидеры</button>
+    <button onclick="openScreen('profile')">Профиль</button>
+  </aside>
 
-<main class="content">
+  <!-- Основной контент -->
+  <main class="content">
+    <header>
+      <div id="username"></div>
+      <div id="balance"></div>
+    </header>
 
-<header>
-  <div id="username"></div>
-  <div id="balance"></div>
-</header>
+    <!-- Dashboard / Clicker -->
+    <section id="dashboard" class="screen active">
+      <div class="card mining">
+        <h3>Майнинг</h3>
+        <button class="clicker-btn" onclick="clickCoin()">+0.1</button>
+      </div>
+    </section>
 
-<section id="dashboard" class="screen active">
-  <div class="card mining">
-    <h3>Майнинг</h3>
-    <button onclick="clickCoin()">+0.1</button>
-  </div>
-</section>
+    <!-- Roulette -->
+    <section id="roulette" class="screen">
+      <h2>Рулетка</h2>
+      <div class="wheel" id="wheel"></div>
+      <input type="number" id="betAmount" placeholder="Ставка">
+      <select id="betType">
+        <option value="red">Красное</option>
+        <option value="black">Чёрное</option>
+      </select>
+      <button onclick="playRoulette()">Играть</button>
+      <div id="rouletteResult"></div>
+    </section>
 
-<section id="roulette" class="screen">
-  <h2>Рулетка</h2>
+    <!-- Cases -->
+    <section id="cases" class="screen">
+      <h2>Кейсы</h2>
+      <div class="case common" onclick="openCase('common')">Common — 100</div>
+      <div class="case rare" onclick="openCase('rare')">Rare — 500</div>
+      <div class="case legendary" onclick="openCase('legendary')">Legendary — 1000</div>
+      <div id="caseResult"></div>
+    </section>
 
-  <div class="wheel" id="wheel"></div>
+    <!-- Leaderboard -->
+    <section id="leaderboard" class="screen">
+      <h2>Лидеры</h2>
+      <ul id="leaders"></ul>
+    </section>
 
-  <input type="number" id="betAmount" placeholder="Ставка">
-  <select id="betType">
-    <option value="red">Красное</option>
-    <option value="black">Чёрное</option>
-  </select>
+    <!-- Profile -->
+    <section id="profile" class="screen">
+      <h2>Профиль</h2>
+      <p id="ref"></p>
+    </section>
 
-  <button onclick="playRoulette()">Играть</button>
+  </main>
 
-  <div id="rouletteResult"></div>
-</section>
-
-<section id="cases" class="screen">
-  <h2>Кейсы</h2>
-  <div class="case" onclick="openCase('common')">Common — 100</div>
-  <div class="case" onclick="openCase('rare')">Rare — 500</div>
-  <div class="case" onclick="openCase('legendary')">Legendary — 1000</div>
-  <div id="caseResult"></div>
-</section>
-
-<section id="leaderboard" class="screen">
-  <h2>Лидеры</h2>
-  <ul id="leaders"></ul>
-</section>
-
-<section id="profile" class="screen">
-  <h2>Профиль</h2>
-  <p id="ref"></p>
-</section>
-
-</main>
 </div>
 
 <script src="app.js"></script>
