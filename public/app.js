@@ -16,7 +16,10 @@ async function login(){
   userData = await res.json();
   updateUI();
 
-  document.getElementById("loader").style.display="none";
+  // анимация загрузки
+  const loader=document.getElementById("loader");
+  loader.style.opacity=0;
+  setTimeout(()=>loader.style.display="none",500);
   document.getElementById("app").classList.remove("hidden");
 }
 
@@ -27,19 +30,21 @@ function updateUI(){
 }
 
 function openScreen(id){
-  document.querySelectorAll(".screen").forEach(s=>s.classList.remove("active"));
+  document.querySelectorAll(".screen").forEach(s=>{
+    s.classList.remove("active");
+  });
   document.getElementById(id).classList.add("active");
 
   if(id==="leaderboard") loadLeaderboard();
 }
 
+// ==================== Clicker
 async function clickCoin(){
   const res = await fetch("/api/click",{
     method:"POST",
     headers:{ "Content-Type":"application/json"},
     body:JSON.stringify({telegramId})
   });
-
   const data = await res.json();
   if(data.coins){
     userData.coins=data.coins;
@@ -47,6 +52,7 @@ async function clickCoin(){
   }
 }
 
+// ==================== Roulette
 async function playRoulette(){
   const bet = Number(document.getElementById("betAmount").value);
   const type = document.getElementById("betType").value;
@@ -60,34 +66,36 @@ async function playRoulette(){
   const data = await res.json();
   if(data.error) return alert(data.error);
 
-  document.getElementById("wheel").style.transform=
-  `rotate(${3600 + data.number*10}deg)`;
+  // анимация вращения
+  const wheel=document.getElementById("wheel");
+  wheel.style.transform=`rotate(${3600+data.number*10}deg)`;
 
   setTimeout(()=>{
     userData.coins=data.coins;
     updateUI();
     document.getElementById("rouletteResult").innerText=
-    "Выпало: "+data.number+" | Выигрыш: "+data.win;
+      "Выпало: "+data.number+" | Выигрыш: "+data.win;
   },3000);
 }
 
+// ==================== Cases
 async function openCase(type){
   const res = await fetch("/api/case",{
     method:"POST",
     headers:{ "Content-Type":"application/json"},
     body:JSON.stringify({telegramId, type})
   });
-
   const data = await res.json();
   if(data.error) return alert(data.error);
 
   document.getElementById("caseResult").innerText=
-  "Вы получили "+data.reward;
+    "Вы получили "+data.reward+" монет";
 
   userData.coins=data.coins;
   updateUI();
 }
 
+// ==================== Leaderboard
 async function loadLeaderboard(){
   const res = await fetch("/api/leaderboard");
   const users = await res.json();
