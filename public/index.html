@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>DangerLine</title>
+<link rel="stylesheet" href="style.css">
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+</head>
+<body>
+
+<div id="app">
+  <h1>DangerLine</h1>
+  <p id="balance">Монеты: 0</p>
+
+  <button onclick="clickCoin()">Кликер +1</button>
+
+  <h2>Кейсы</h2>
+  <button onclick="openCase('common')">Обычный (100)</button>
+  <button onclick="openCase('rare')">Редкий (500)</button>
+  <button onclick="openCase('legendary')">Легендарный (1000)</button>
+
+  <h2>Профиль</h2>
+  <p id="ref"></p>
+
+  <h2>Магазин</h2>
+  <p>VIP — в разработке</p>
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>
