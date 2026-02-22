@@ -1,15 +1,89 @@
-body {
-  background: #12131a;
-  color: white;
-  font-family: Arial;
-  text-align: center;
+body{
+  margin:0;
+  font-family:Inter,sans-serif;
+  background:#0f1115;
+  color:#fff;
 }
 
-button {
-  background: #6c5ce7;
-  border: none;
-  padding: 10px 20px;
-  margin: 5px;
-  border-radius: 10px;
-  color: white;
+.hidden{display:none;}
+
+#loader{
+  position:fixed;
+  inset:0;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  background:#0f1115;
+}
+
+.logo{
+  font-size:28px;
+  letter-spacing:4px;
+  color:#c42030;
+}
+
+.sidebar{
+  width:200px;
+  background:#151821;
+  position:fixed;
+  height:100%;
+  padding:20px;
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+}
+
+.sidebar button{
+  background:none;
+  border:none;
+  color:#aaa;
+  text-align:left;
+  cursor:pointer;
+}
+
+.sidebar button:hover{
+  color:#fff;
+}
+
+.content{
+  margin-left:200px;
+  padding:20px;
+}
+
+.screen{display:none;}
+.screen.active{display:block;}
+
+.card{
+  background:#1a1f2b;
+  padding:20px;
+  border-radius:10px;
+}
+
+button{
+  background:#c42030;
+  border:none;
+  padding:10px 15px;
+  color:#fff;
+  border-radius:6px;
+  cursor:pointer;
+}
+
+.wheel{
+  width:200px;
+  height:200px;
+  border-radius:50%;
+  background:conic-gradient(
+    red 0 10%,
+    black 10% 20%,
+    red 20% 30%,
+    black 30% 40%,
+    red 40% 50%,
+    black 50% 60%,
+    red 60% 70%,
+    black 70% 80%,
+    red 80% 90%,
+    black 90% 100%
+  );
+  margin:20px 0;
+  transition:transform 3s cubic-bezier(.17,.67,.83,.67);
 }
