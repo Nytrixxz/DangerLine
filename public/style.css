@@ -245,10 +245,6 @@ h2 i {
     -webkit-text-fill-color: #1a1a2c;
 }
 
-.vip-badge.hidden {
-    display: none;
-}
-
 .daily-bonus-btn {
     background: linear-gradient(135deg, #ffd700, #ffa500);
     border: none;
@@ -269,6 +265,10 @@ h2 i {
 .daily-bonus-btn:active {
     transform: translateY(5px);
     box-shadow: 0 3px 0 #b37400;
+}
+
+.daily-bonus-btn.hidden {
+    display: none;
 }
 
 .daily-bonus-btn.disabled {
@@ -439,7 +439,7 @@ h2 i {
     margin-left: 8px;
 }
 
-/* Кейсы (без изменений) */
+/* Кейсы */
 .cases-container {
     display: flex;
     flex-direction: column;
@@ -604,7 +604,7 @@ h2 i {
 .color-btn.selected { transform: translateY(-2px); box-shadow: 0 6px 0 currentColor, 0 0 0 2px rgba(255,255,255,0.5); }
 .color-btn:active { transform: translateY(4px); box-shadow: 0 2px 0 currentColor; }
 
-/* Блэкджек улучшенный */
+/* Блэкджек */
 .blackjack-table {
     background: #0f4b2b;
     border-radius: 30px;
@@ -648,6 +648,12 @@ h2 i {
     border: 1px solid #ccc;
 }
 
+.card.back {
+    background: repeating-linear-gradient(45deg, #ccc, #ccc 10px, #aaa 10px, #aaa 20px);
+    color: transparent;
+    border: 2px solid #333;
+}
+
 .card[data-suit="♥"], .card[data-suit="♦"] {
     color: red;
 }
@@ -658,6 +664,21 @@ h2 i {
     padding: 5px 15px;
     border-radius: 20px;
     align-self: flex-start;
+}
+
+.blackjack-controls {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+.game-btn.small {
+    padding: 12px 20px;
+    font-size: 16px;
+    width: auto;
+    min-width: 90px;
+    margin-top: 10px;
 }
 
 /* Кликер */
@@ -855,13 +876,6 @@ h2 i {
 .game-btn:active {
     transform: translateY(5px);
     box-shadow: 0 3px 0 #5a3bb5;
-}
-
-.game-btn.small {
-    padding: 12px 20px;
-    font-size: 16px;
-    width: auto;
-    margin-top: 0;
 }
 
 .result-area {
